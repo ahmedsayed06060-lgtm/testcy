@@ -1,0 +1,15 @@
+'use client';
+
+import { useRef, useState } from 'react';
+import { CheckCircle2, FileCheck2, FileText, ShieldCheck, UploadCloud } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/toast';
+
+export function AuthDocApproval({ status = 'verified' }: { status?: 'verified' | 'pending' }) {
+  const [approved, setApproved] = useState(status === 'verified');
+  const [filename, setFilename] = useState('Signed_Authorization_Acme_Q4.pdf');
+  const input = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  return <div className="p-5"><div className="rounded-xl border border-line"><div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center"><span className="flex h-11 w-11 items-center justify-center rounded-lg bg-red-50 text-red-600 dark:bg-red-950"><FileText className="h-5 w-5" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{filename}</p><p className="mt-1 text-[11px] text-muted">PDF · 1.8 MB · SHA-256 verified · Uploaded Oct 20, 2026</p><div className="mt-2 flex items-center gap-2"><Badge variant={approved ? 'success' : 'warning'}>{approved ? <CheckCircle2 className="h-3 w-3" /> : <FileCheck2 className="h-3 w-3" />}{approved ? 'Verified by Engagement Manager' : 'Awaiting independent approval'}</Badge></div></div>{!approved && <Button size="sm" onClick={() => { setApproved(true); toast('Authorization approved', 'Scope and ownership checks still apply to every job.'); }}><ShieldCheck className="h-4 w-4" />Approve document</Button>}</div><div className="grid gap-3 border-t border-line bg-canvas/40 px-4 py-3 text-[11px] text-muted sm:grid-cols-3"><span><strong className="block font-medium text-ink">Document type</strong>Authorization letter</span><span><strong className="block font-medium text-ink">Uploaded by</strong>Layla Hassan</span><span><strong className="block font-medium text-ink">Review policy</strong>Independent approval</span></div></div><input ref={input} type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) { setFilename(file.name); setApproved(false); toast('Document uploaded', 'An independent manager must now approve it.'); } }} /><button onClick={() => input.current?.click()} className="mt-4 flex w-full flex-col items-center rounded-xl border border-dashed border-line bg-canvas/30 px-5 py-7 transition hover:border-brand-400 hover:bg-brand-50/40"><UploadCloud className="h-6 w-6 text-brand-600" /><span className="mt-2 text-xs font-semibold">Upload a replacement document</span><span className="mt-1 text-[10px] text-muted">PDF, PNG or JPEG · maximum 100 MB · malware scanned</span></button><div className="mt-4 flex gap-2 text-[11px] leading-5 text-muted"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />Uploading or approving a document does not itself authorize execution. Current time, assignment, scope, exclusions, and ownership are independently checked.</div></div>;
+}

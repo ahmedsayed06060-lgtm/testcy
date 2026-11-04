@@ -1,0 +1,32 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useLocale } from 'next-intl';
+import { ArrowRight, ChevronLeft, ChevronRight, Download, Plus, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { SeverityBadge, StatusBadge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/common/empty-state';
+import { PageHeader } from '@/components/common/page-header';
+import { FindingForm } from './finding-form';
+import { useOpsStore } from '@/stores/ops-store';
+import { cn, downloadText } from '@/lib/utils';
+
+export function FindingsView() {
+  const locale = useLocale();
+  const findings = useOpsStore((state) => state.findings);
+  const [search, setSearch] = useState('');
+  const [severity, setSeverity] = useState('all');
+  const [status, setStatus] = useState('all');
+  const [formOpen, setFormOpen] = useState(false);
+  const filtered = useMemo(() => findings.filter((finding) => {
+    const text = `${finding.id} ${finding.title} ${finding.asset} ${finding.client}`.toLowerCase();
+    return text.includes(search.toLowerCase()) && (severity === 'all' || finding.severity === severity) && (status === 'all' || finding.status === status);
+  }), [findings, search, severity, status]);
+  const exportCsv = () => {
+    const rows = [['ID', 'Title', 'Severity', 'CVSS', 'Status', 'Asset', 'Client'], ...filtered.map((item) => [item.id, item.title, item.severity, String(item.cvss), item.status, item.asset, item.client])];
+    downloadText('cyberops-findings.csv', rows.map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(',')).join('\n'), 'text/csv');
+  };
+  return <div className="space-y-6 animate-fade-up"><PageHeader eyebrow="Risk management" title="Findings" description="Validate, prioritize, and track vulnerabilities from discovery through remediation." actions={<><Button variant="secondary" onClick={exportCsv}><Download className="h-4 w-4" />Export CSV</Button><Button onClick={() => setFormOpen(true)}><Plus className="h-4 w-4" />New finding</Button></>} /><div className="grid grid-cols-2 gap-3 sm:grid-cols-5">{(['critical', 'high', 'medium', 'low', 'informational'] as const).map((item) => <button key={item} onClick={() => setSeverity(severity === item ? 'all' : item)} className={cn('card p-4 text-start transition hover:border-brand-300', severity === item && 'border-brand-500 ring-2 ring-brand-500/10')}><div className="flex items-center justify-between"><span className="text-[11px] font-medium capitalize text-muted">{item}</span><span className={cn('h-2 w-2 rounded-full', item === 'critical' ? 'bg-red-500' : item === 'high' ? 'bg-orange-500' : item === 'medium' ? 'bg-yellow-500' : item === 'low' ? 'bg-blue-500' : 'bg-slate-400')} /></div><p className="mt-2 text-2xl font-semibold">{item === 'critical' ? 7 : item === 'high' ? 19 : item === 'medium' ? 33 : item === 'low' ? 36 : 53}</p></button>)}</div><Card className="overflow-hidden"><div className="flex flex-col gap-3 border-b border-line p-4 lg:flex-row"><div className="relative flex-1"><Search className="absolute start-3 top-2.5 h-4 w-4 text-muted" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by ID, title, asset, or client…" className="h-9 w-full rounded-lg border border-line bg-canvas/40 ps-9 pe-3 text-xs outline-none focus:border-brand-500" /></div><div className="flex gap-2"><select value={severity} onChange={(event) => setSeverity(event.target.value)} className="h-9 rounded-lg border border-line bg-surface px-3 text-xs"><option value="all">All severities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option><option value="informational">Informational</option></select><select value={status} onChange={(event) => setStatus(event.target.value)} className="h-9 rounded-lg border border-line bg-surface px-3 text-xs"><option value="all">All statuses</option><option value="open">Open</option><option value="in_progress">In progress</option><option value="retest">Retest</option><option value="fixed">Fixed</option></select></div></div><div className="overflow-x-auto"><table className="w-full min-w-[1000px]"><thead><tr className="table-head">{['Finding', 'Severity', 'Status', 'Affected asset', 'Client', 'Owner', 'Discovered'].map((header) => <th key={header} className="px-5 py-3 text-start">{header}</th>)}<th /></tr></thead><tbody className="divide-y divide-line">{filtered.map((finding) => <tr key={finding.id} className="group hover:bg-canvas/60"><td className="table-cell max-w-[330px]"><Link href={`/${locale}/findings/${finding.id}`}><span className="block truncate text-xs font-semibold group-hover:text-brand-700">{finding.title}</span><span className="mt-1.5 block font-mono text-[10px] text-muted">{finding.id} · {finding.cwe}</span></Link></td><td className="table-cell"><SeverityBadge severity={finding.severity} score={finding.cvss} /></td><td className="table-cell"><StatusBadge status={finding.status} /></td><td className="table-cell"><span className="block max-w-[180px] truncate font-mono text-[11px]">{finding.asset}</span></td><td className="table-cell"><span className="block max-w-[160px] truncate text-[11px] text-muted">{finding.client}</span></td><td className="table-cell text-[11px] text-muted">{finding.owner}</td><td className="table-cell whitespace-nowrap text-[11px] text-muted">{finding.discovered}</td><td className="px-3"><Link href={`/${locale}/findings/${finding.id}`} className="icon-button h-8 w-8"><ArrowRight className="h-4 w-4 rtl:rotate-180" /></Link></td></tr>)}</tbody></table>{!filtered.length && <EmptyState />}</div><div className="flex items-center justify-between border-t border-line px-5 py-3 text-xs text-muted"><span>{filtered.length} detailed records · 148 total findings</span><div className="flex items-center gap-1"><button className="icon-button h-7 w-7" disabled><ChevronLeft className="h-3.5 w-3.5" /></button><span className="flex h-7 w-7 items-center justify-center rounded-md bg-brand-50 font-semibold text-brand-700">1</span><button className="h-7 w-7 rounded-md hover:bg-canvas">2</button><button className="h-7 w-7 rounded-md hover:bg-canvas">3</button><button className="icon-button h-7 w-7"><ChevronRight className="h-3.5 w-3.5" /></button></div></div></Card><FindingForm open={formOpen} onClose={() => setFormOpen(false)} /></div>;
+}

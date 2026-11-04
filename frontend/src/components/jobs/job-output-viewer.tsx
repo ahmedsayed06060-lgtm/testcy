@@ -1,0 +1,15 @@
+'use client';
+
+import { useState } from 'react';
+import { Copy, Download, TerminalSquare } from 'lucide-react';
+
+import { useToast } from '@/components/ui/toast';
+import { cn, downloadText } from '@/lib/utils';
+
+const output = `[13:02:14] Worker accepted JOB-8F42A\n[13:02:14] Revalidating engagement authorization…\n[13:02:14] ✓ Engagement active and testing window valid\n[13:02:14] ✓ Signed authorization document verified\n[13:02:14] ✓ 1/1 target matches approved scope\n[13:02:14] ✓ Ownership evidence valid; no exclusions matched\n[13:02:15] Starting isolated container cyberops-nuclei:latest\n[13:02:15] Network: cyberops-egress | Memory: 2g | CPUs: 1.0\n[13:02:18] Templates loaded: 7,421 (authorized profiles only)\n[13:04:32] [info] api.acme.example — TLS 1.3 supported\n[13:07:09] [medium] missing-content-security-policy — /account\n[13:10:46] [high] outdated-jquery — assets/vendor/jquery-3.4.1.js\n[13:20:38] Scan completed. 3 findings normalized for review.`;
+
+export function JobOutputViewer({ jobId }: { jobId: string }) {
+  const [tab, setTab] = useState<'output' | 'authorization'>('output');
+  const { toast } = useToast();
+  return <div><div className="flex items-center justify-between border-b border-navy-800 bg-navy-900 px-4 py-2.5"><div className="flex gap-1">{[['output', 'Tool output'], ['authorization', 'Authorization trace']].map(([key, label]) => <button key={key} onClick={() => setTab(key as 'output' | 'authorization')} className={cn('rounded-md px-3 py-1.5 text-[11px] font-medium', tab === key ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300')}>{label}</button>)}</div><div className="flex gap-1"><button className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-white/5 hover:text-white" onClick={() => { navigator.clipboard.writeText(output); toast('Output copied'); }}><Copy className="h-3.5 w-3.5" /></button><button className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-white/5 hover:text-white" onClick={() => downloadText(`${jobId}.log`, output)}><Download className="h-3.5 w-3.5" /></button></div></div><pre className="scrollbar-thin min-h-[350px] overflow-auto bg-navy-950 p-5 font-mono text-[11px] leading-6 text-slate-400">{tab === 'output' ? output : `[13:02:14] GATE_REQUEST engagement=eng-acme-q4\n[13:02:14] ACTOR user=layla.hassan role=pentester assignment=member\n[13:02:14] STATUS active; DATE within approved range; WINDOW valid\n[13:02:14] DOCUMENT authorization.pdf approved_by=manager@aegis.example\n[13:02:14] TARGET api.acme.example MATCH domain parent=*.acme.example\n[13:02:14] OWNERSHIP verified method=dns_txt verified_at=2026-10-20T09:14Z\n[13:02:14] EXCLUSIONS checked=3 matches=0\n[13:02:14] DECISION AUTHORIZED audit_event=aud_81c4a92e\n[13:02:14] No bypass flags or execution overrides present.`}</pre><div className="flex items-center gap-2 border-t border-navy-800 bg-navy-900 px-4 py-2.5 text-[10px] text-slate-500"><TerminalSquare className="h-3.5 w-3.5" />Raw output is available only to authorized staff, never to client portal users.</div></div>;
+}

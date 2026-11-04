@@ -1,0 +1,61 @@
+name: cyberops-hub
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: ${POSTGRES_USER}, POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}, POSTGRES_DB: ${POSTGRES_DB} }
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"], interval: 10s, timeout: 5s, retries: 10 }
+    networks: [private]
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes: ["redis-data:/data"]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 10s, timeout: 3s, retries: 10 }
+    networks: [private]
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment: { MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}, MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY} }
+    volumes: ["minio-data:/data"]
+    healthcheck: { test: ["CMD", "mc", "ready", "local"], interval: 10s, timeout: 5s, retries: 10 }
+    networks: [private]
+  mailpit:
+    image: axllent/mailpit:latest
+    networks: [private]
+  clamav:
+    image: clamav/clamav:1.4
+    volumes: ["clamav-data:/var/lib/clamav"]
+    healthcheck: { test: ["CMD-SHELL", "clamdscan --ping 3 --wait 60 /dev/null"], interval: 30s, timeout: 65s, retries: 10 }
+    networks: [private]
+  backend:
+    build: { context: ./backend, dockerfile: Dockerfile }
+    env_file: .env
+    environment: { DATABASE_URL: ${DATABASE_URL}, REDIS_URL: ${REDIS_URL}, CELERY_BROKER_URL: ${CELERY_BROKER_URL}, CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}, CLAMAV_HOST: clamav }
+    volumes: ["./backend/keys:/srv/keys:ro"]
+    depends_on: { postgres: { condition: service_healthy }, redis: { condition: service_healthy }, minio: { condition: service_healthy }, clamav: { condition: service_healthy } }
+    healthcheck: { test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"], interval: 15s, timeout: 5s, retries: 5 }
+    networks: [private]
+  celery-worker:
+    build: { context: ./backend, dockerfile: Dockerfile.worker }
+    env_file: .env
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock", "./backend/keys:/srv/keys:ro", "scan-output:/output"]
+    depends_on: { postgres: { condition: service_healthy }, redis: { condition: service_healthy }, minio: { condition: service_healthy } }
+    networks: [private, cyberops-egress]
+  celery-beat:
+    build: { context: ./backend, dockerfile: Dockerfile.worker }
+    command: ["celery", "-A", "app.tasks.celery_app:celery_app", "beat", "--loglevel=INFO"]
+    env_file: .env
+    depends_on: [redis, postgres]
+    networks: [private]
+  frontend:
+    build: { context: ./frontend, dockerfile: Dockerfile, args: { NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL} } }
+    environment: { NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL} }
+    depends_on: [backend]
+    ports: ["3000:3000"]
+    networks: [private]
+  mobsf:
+    image: opensecurity/mobile-security-framework-mobsf:latest
+    environment: { MOBSF_API_KEY: ${MOBSF_API_KEY} }
+    networks: [private]
+volumes: { postgres-data: {}, redis-data: {}, minio-data: {}, clamav-data: {}, scan-output: {} }
+networks: { private: { driver: bridge }, cyberops-egress: { driver: bridge } }

@@ -1,0 +1,88 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cyberops-hub-api"
+version = "1.0.0"
+description = "Authorization-first security operations API"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.32,<1",
+  "pydantic>=2.10,<3",
+  "pydantic-settings>=2.6,<3",
+  "email-validator>=2.2,<3",
+  "sqlalchemy[asyncio]>=2.0.36,<3",
+  "asyncpg>=0.30,<1",
+  "alembic>=1.14,<2",
+  "python-jose[cryptography]>=3.3,<4",
+  "passlib[bcrypt]>=1.7.4,<2",
+  "bcrypt>=4.0.1,<4.1",
+  "pyotp>=2.9,<3",
+  "cryptography>=43,<45",
+  "python-multipart>=0.0.20,<1",
+  "minio>=7.2,<8",
+  "celery>=5.4,<6",
+  "redis>=5.2,<6",
+  "aiosmtplib>=3,<5",
+  "jinja2>=3.1,<4",
+  "bleach>=6.2,<7",
+  "structlog>=24.4,<26",
+  "slowapi>=0.1.9,<1",
+  "weasyprint>=63,<66",
+  "python-docx>=1.1,<2",
+  "prometheus-fastapi-instrumentator>=7,<8",
+  "httpx>=0.28,<1",
+  "aiofiles>=24,<26",
+  "dnspython>=2.7,<3",
+  "defusedxml>=0.7.1,<1",
+  "clamd>=1.0.2,<2",
+  "cvss>=3.4,<4",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9",
+  "pytest-asyncio>=0.24,<1",
+  "pytest-cov>=6,<7",
+  "aiosqlite>=0.20,<1",
+  "ruff>=0.8,<1",
+  "mypy>=1.13,<2",
+  "pip-audit>=2.7,<3",
+  "types-passlib>=1.7",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-q --cov=app --cov-report=term-missing"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "S", "ASYNC"]
+ignore = ["S101", "B008"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ["alembic/versions"]
+
+[[tool.mypy.overrides]]
+module = ["bleach", "clamd", "defusedxml", "defusedxml.*", "cvss", "celery", "celery.*", "weasyprint", "jose"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["app.tasks.*"]
+disable_error_code = ["untyped-decorator"]
+
+[[tool.mypy.overrides]]
+module = ["app.redis"]
+disable_error_code = ["no-untyped-call"]

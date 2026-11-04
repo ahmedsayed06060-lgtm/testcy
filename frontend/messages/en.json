@@ -1,0 +1,16 @@
+{
+  "nav": {
+    "workspace": "Workspace", "overview": "Overview", "engagements": "Engagements", "findings": "Findings", "jobs": "Scan jobs", "reports": "Reports",
+    "modules": "Assessment modules", "mobile": "Mobile security", "social": "Social assessment", "organization": "Organization", "clients": "Clients", "users": "Team members", "audit": "Audit log", "settings": "Settings", "collapse": "Collapse sidebar"
+  },
+  "common": {
+    "search": "Search engagements, findings…", "newEngagement": "New engagement", "viewAll": "View all", "cancel": "Cancel", "save": "Save changes", "close": "Close", "download": "Download", "active": "Active", "all": "All", "english": "English", "arabic": "العربية"
+  },
+  "dashboard": {
+    "eyebrow": "Security operations", "title": "Good morning, Omar", "subtitle": "Here’s what’s happening across your security engagements today.", "period": "Oct 28 – Nov 4, 2026",
+    "controls": "Authorization controls active", "controlsText": "Every execution path is protected by scope, ownership, and time-window verification.", "viewControls": "View security controls",
+    "activeEngagements": "Active engagements", "openFindings": "Open findings", "criticalExposures": "Critical exposures", "reportsGenerated": "Reports generated",
+    "trends": "Finding trends", "trendsText": "Discovery and remediation over the last 12 days", "severity": "Findings by severity", "severityText": "Current open vulnerability distribution",
+    "engagementsTitle": "Active engagements", "engagementsText": "Track progress and risk across your authorized work", "operations": "Live operations", "operationsText": "Authorized jobs across your workspace", "activity": "Recent activity"
+  }
+}
