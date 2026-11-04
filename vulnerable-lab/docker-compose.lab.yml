@@ -1,0 +1,13 @@
+name: cyberops-authorized-lab
+services:
+  juice-shop:
+    image: bkimminich/juice-shop:latest
+    networks: [lab]
+  webgoat:
+    image: webgoat/webgoat:latest
+    networks: [lab]
+networks:
+  lab:
+    driver: bridge
+    internal: false
+# Start only on an isolated training host. These applications are intentionally vulnerable.

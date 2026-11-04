@@ -1,0 +1,19 @@
+@page { size: A4; margin: 22mm 18mm; @bottom-center { content: "CyberOps Hub · Confidential · " counter(page); font-size: 8pt; color: #64748b; } }
+* { box-sizing: border-box; }
+body { font-family: "Noto Sans", "Noto Sans Arabic", sans-serif; color: #172033; font-size: 10pt; line-height: 1.65; }
+[dir=rtl] body, [dir=rtl] { direction: rtl; text-align: right; }
+.cover { min-height: 220mm; padding-top: 45mm; border-top: 8px solid #0b8674; }
+.logo { color: #0b8674; font-size: 20pt; font-weight: 700; }
+h1 { margin-top: 25mm; font-size: 28pt; line-height: 1.2; }
+h2 { margin-top: 8mm; color: #0b6e62; font-size: 16pt; border-bottom: 1px solid #d9e2ec; padding-bottom: 2mm; }
+.meta { margin-top: 15mm; color: #64748b; }
+.confidential { margin-top: 40mm; padding: 4mm; background: #effcf8; color: #0d6b5f; font-weight: 600; }
+.summary { display: flex; gap: 3mm; margin: 6mm 0; }
+.stat { flex: 1; padding: 4mm; border: 1px solid #d9e2ec; border-radius: 3mm; text-align: center; }
+.stat strong { display: block; font-size: 20pt; }
+.finding { page-break-inside: avoid; margin: 5mm 0; padding: 5mm; border: 1px solid #d9e2ec; border-radius: 3mm; }
+.severity { display: inline-block; padding: 1mm 2mm; border-radius: 2mm; background: #fee2e2; color: #b91c1c; font-weight: 700; }
+.evidence { white-space: pre-wrap; background: #0e1929; color: #e2e8f0; padding: 4mm; font-family: monospace; font-size: 8pt; }
+table { width: 100%; border-collapse: collapse; margin: 4mm 0; }
+th, td { border: 1px solid #d9e2ec; padding: 3mm; text-align: start; }
+th { background: #f1f5f9; }

@@ -1,0 +1,48 @@
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/noto-sans-arabic';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --canvas: 246 248 250;
+  --surface: 255 255 255;
+  --ink: 20 31 45;
+  --muted: 100 116 139;
+  --line: 226 232 240;
+  color-scheme: light;
+}
+
+.dark {
+  --canvas: 12 20 32;
+  --surface: 20 31 46;
+  --ink: 229 237 245;
+  --muted: 143 158 177;
+  --line: 47 62 80;
+  color-scheme: dark;
+}
+
+* { border-color: rgb(var(--line)); }
+html { scroll-behavior: smooth; }
+body { @apply bg-canvas text-ink antialiased; }
+::selection { @apply bg-brand-200 text-brand-950; }
+:focus-visible { @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-surface; }
+
+@layer components {
+  .card { @apply rounded-xl border border-line bg-surface shadow-card; }
+  .card-header { @apply flex items-center justify-between gap-4 border-b border-line px-5 py-4; }
+  .card-title { @apply text-[15px] font-semibold tracking-[-0.01em] text-ink; }
+  .subtle-text { @apply text-sm text-muted; }
+  .table-head { @apply border-b border-line bg-canvas/60 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted; }
+  .table-cell { @apply px-5 py-4 align-middle text-sm; }
+  .icon-button { @apply inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent text-muted transition hover:border-line hover:bg-canvas hover:text-ink; }
+  .text-link { @apply text-sm font-medium text-brand-700 transition hover:text-brand-600 dark:text-brand-400; }
+}
+
+[dir='rtl'] .font-sans { font-family: 'Noto Sans Arabic Variable', 'Inter Variable', sans-serif; }
+[dir='rtl'] .tracking-\[-0\.01em\] { letter-spacing: 0; }
+.scrollbar-thin::-webkit-scrollbar { width: 5px; height: 5px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { @apply rounded-full bg-slate-300 dark:bg-slate-700; }
+.recharts-cartesian-axis-tick-value { fill: rgb(var(--muted)); font-size: 11px; }
+.recharts-tooltip-wrapper { outline: none; }

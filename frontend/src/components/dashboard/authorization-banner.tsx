@@ -1,0 +1,8 @@
+import Link from 'next/link';
+import { useLocale } from 'next-intl';
+import { ArrowRight, LockKeyhole, ShieldCheck } from 'lucide-react';
+
+export function AuthorizationBanner({ title, text, linkLabel }: { title: string; text: string; linkLabel: string }) {
+  const locale = useLocale();
+  return <section className="relative overflow-hidden rounded-xl border border-brand-200/80 bg-gradient-to-r from-brand-50 via-brand-50 to-emerald-50/40 px-5 py-4 dark:border-brand-900 dark:from-brand-950 dark:to-surface"><div className="absolute -end-5 -top-10 h-36 w-36 rounded-full border-[24px] border-brand-500/[0.035]" /><div className="relative flex flex-col gap-3 sm:flex-row sm:items-center"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-brand-600 text-white shadow-sm"><ShieldCheck className="h-5 w-5" /></span><div className="flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="text-sm font-semibold text-brand-950 dark:text-brand-200">{title}</h2><span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-brand-700 ring-1 ring-brand-200 dark:bg-brand-900/50 dark:text-brand-300"><LockKeyhole className="h-2.5 w-2.5" />Enforced</span></div><p className="mt-1 text-xs leading-5 text-brand-800/75 dark:text-brand-300/70">{text}</p></div><Link href={`/${locale}/settings#security`} className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-brand-800 hover:text-brand-600 dark:text-brand-300">{linkLabel}<ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" /></Link></div></section>;
+}
