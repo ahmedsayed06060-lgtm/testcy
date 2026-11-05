@@ -2,6 +2,7 @@
 
 import asyncio
 from dataclasses import dataclass
+from pathlib import Path
 
 from app.config import settings
 from app.models.job import Job, JobType, ScanProfile
@@ -30,12 +31,12 @@ def tool_invocation(job: Job) -> tuple[str, list[str]]:
                 "3",
             ],
         }[job.profile]
-        return "cyberops-nmap", ["nmap", *flags, *job.targets, "-oX", "/output/scan.xml"]
+        return "cyberops-nmap", ["nmap", *flags, *job.targets, "-oX", f"/output/{job.id}.xml"]
     if job.job_type == JobType.TESTSSL_SCAN and len(job.targets) == 1:
         return "cyberops-testssl", [
             "testssl.sh",
             "--jsonfile",
-            "/output/results.json",
+            f"/output/{job.id}.json",
             "--severity",
             "LOW",
             "--color",
@@ -72,7 +73,7 @@ def tool_invocation(job: Job) -> tuple[str, list[str]]:
                 "10",
                 "-jsonl",
                 "-o",
-                "/output/results.jsonl",
+                f"/output/{job.id}.jsonl",
             ]
         )
         return "cyberops-nuclei", command
@@ -81,16 +82,39 @@ def tool_invocation(job: Job) -> tuple[str, list[str]]:
             job.profile
         ]
         return "cyberops-zap", [
-            "zap-baseline.py",
+            "/zap/zap-baseline.py",
             "-t",
             job.targets[0],
             "-J",
-            "/output/results.json",
+            f"/output/{job.id}.json",
             *mode.split(),
         ]
     if job.job_type == JobType.OSINT_SCAN:
         return "cyberops-osint", ["python", "/app/public_assessment.py", *job.targets]
     raise ValueError("Unsupported tool or target combination")
+
+
+def _artifact_path(job: Job) -> Path | None:
+    extensions = {
+        JobType.NMAP_SCAN: ".xml",
+        JobType.TESTSSL_SCAN: ".json",
+        JobType.NUCLEI_SCAN: ".jsonl",
+        JobType.ZAP_SCAN: ".json",
+    }
+    extension = extensions.get(job.job_type)
+    return Path(settings.tool_output_dir) / f"{job.id}{extension}" if extension else None
+
+
+def _read_artifact(path: Path) -> str:
+    if not path.exists():
+        return ""
+    try:
+        with path.open("rb") as artifact:
+            payload = artifact.read(50_000_001)
+        truncated = "\n[output truncated at 50 MB]" if len(payload) > 50_000_000 else ""
+        return payload[:50_000_000].decode("utf-8", errors="replace") + truncated
+    finally:
+        path.unlink(missing_ok=True)
 
 
 async def run_sandboxed_tool(job: Job) -> ToolResult:
@@ -103,7 +127,7 @@ async def run_sandboxed_tool(job: Job) -> ToolResult:
         "--tmpfs",
         "/tmp:rw,noexec,nosuid,size=256m",  # noqa: S108 - required sandbox tmpfs
         "--network",
-        "cyberops-egress",
+        settings.tool_docker_network,
         "--memory=2g",
         "--cpus=1.0",
         "--pids-limit=256",
@@ -111,6 +135,10 @@ async def run_sandboxed_tool(job: Job) -> ToolResult:
         "--security-opt=no-new-privileges",
         "--user",
         "10001:10001",
+        "--volume",
+        f"{settings.tool_output_volume}:/output:rw",
+        "--entrypoint",
+        "",
         "--stop-timeout=5",
         image,
         *command,
@@ -119,14 +147,21 @@ async def run_sandboxed_tool(job: Job) -> ToolResult:
         *docker, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
     timeout = min(settings.default_job_timeout_minutes, settings.max_job_timeout_minutes) * 60
+    artifact_path = _artifact_path(job)
     try:
         stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
     except TimeoutError:
         process.kill()
         await process.communicate()
+        if artifact_path:
+            await asyncio.to_thread(artifact_path.unlink, True)
         raise
+    artifact = await asyncio.to_thread(_read_artifact, artifact_path) if artifact_path else ""
+    stdout_text = stdout.decode("utf-8", errors="replace")
+    if artifact:
+        stdout_text = f"{stdout_text}\n{artifact}" if stdout_text else artifact
     return ToolResult(
-        stdout.decode("utf-8", errors="replace"),
+        stdout_text,
         stderr.decode("utf-8", errors="replace"),
         process.returncode or 0,
     )

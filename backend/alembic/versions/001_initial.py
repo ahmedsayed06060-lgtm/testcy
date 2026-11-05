@@ -62,6 +62,7 @@ def upgrade() -> None:
         "authorization_docs",
         "social_assessments",
         "phishing_campaigns",
+        "phishing_events",
         "mobile_analyses",
     ):
         op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")

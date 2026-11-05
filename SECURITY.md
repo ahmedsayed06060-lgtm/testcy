@@ -12,7 +12,7 @@ Report suspected vulnerabilities privately to the repository owner through GitHu
 
 - Never commit `.env`, JWT private keys, MinIO credentials, MFA seeds, refresh tokens, or evidence.
 - Rotate credentials immediately after accidental disclosure and invalidate all active sessions.
-- Access tokens are 15-minute RS256 JWTs. Refresh tokens are opaque, hashed at rest, rotated, and bound to sessions for family-reuse detection.
+- Access tokens are 15-minute RS256 JWTs signed and verified with PyJWT and an explicitly pinned algorithm/key ID. Refresh tokens are opaque, hashed at rest, rotated, and bound to sessions for family-reuse detection.
 - TOTP secrets and integration credentials use AES-256-GCM with independent random nonces.
 
 ## Deployment requirements
@@ -25,4 +25,6 @@ Report suspected vulnerabilities privately to the repository owner through GitHu
 
 ## Secure development
 
-Pull requests run Ruff, mypy, pytest, TypeScript checks, Vitest, Playwright, dependency audits, and Trivy. New execution paths must include authorization-gate tests, including worker revalidation and immutable denial auditing.
+Pull requests run Ruff, strict mypy, pytest with an 85% coverage floor, live PostgreSQL migration/RLS/audit-rule integration tests, TypeScript checks, Vitest, Playwright, dependency audits, and Trivy. New execution paths must include authorization-gate tests, including worker revalidation and immutable denial auditing.
+
+PDF generation uses patched WeasyPrint with presentational hints disabled and a deny-all resource fetcher. CI makes one documented `pip-audit` exception for `PYSEC-2026-3412`, whose vulnerable `<body background>` presentational-hint path is disabled and unreachable; all other known dependency findings fail the build.

@@ -15,7 +15,12 @@ from app.models.finding import Finding, FindingStatus, Severity
 from app.models.job import Job, JobStatus, JobType, ScanProfile
 from app.models.mobile_analysis import MobileAnalysis, MobilePlatform
 from app.models.notification import Notification
-from app.models.phishing_campaign import CampaignStatus, PhishingCampaign
+from app.models.phishing_campaign import (
+    CampaignEventType,
+    CampaignStatus,
+    PhishingCampaign,
+    PhishingEvent,
+)
 from app.models.report import Report, ReportFormat, ReportLanguage, ReportType
 from app.models.scope import AssetType, ScopeItem, VerificationMethod
 from app.models.social_assessment import SocialAssessment, SocialPlatform
@@ -43,8 +48,10 @@ __all__ = [
     "MobileAnalysis",
     "MobilePlatform",
     "Notification",
+    "CampaignEventType",
     "CampaignStatus",
     "PhishingCampaign",
+    "PhishingEvent",
     "Report",
     "ReportFormat",
     "ReportLanguage",

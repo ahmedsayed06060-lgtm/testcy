@@ -14,7 +14,7 @@ from app.utils.sanitize import sanitize_html
 
 async def create_finding(db: AsyncSession, payload: FindingCreate, user: User) -> Finding:
     values = payload.model_dump()
-    for field in ("description", "evidence", "remediation"):
+    for field in ("description", "business_impact", "evidence", "remediation"):
         if values.get(field):
             values[field] = sanitize_html(values[field])
     finding = Finding(**values, found_by=user.id)
@@ -35,7 +35,7 @@ async def update_finding(
     db: AsyncSession, finding: Finding, payload: FindingUpdate, user: User
 ) -> Finding:
     values = payload.model_dump()
-    for field in ("description", "evidence", "remediation"):
+    for field in ("description", "business_impact", "evidence", "remediation"):
         if values.get(field):
             values[field] = sanitize_html(values[field])
     for key, value in values.items():

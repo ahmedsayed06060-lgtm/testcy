@@ -5,9 +5,11 @@ import hashlib
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, cast
+from typing import Any
 
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import PyJWTError
+from jwt.types import Options
 
 from app.config import settings
 
@@ -50,14 +52,11 @@ def create_token(
         claims["sid"] = str(session_id)
     if token_family:
         claims["family"] = str(token_family)
-    return cast(
-        str,
-        jwt.encode(
-            claims,
-            settings.jwt_private_key,
-            algorithm="RS256",
-            headers={"kid": settings.jwt_key_id},
-        ),
+    return jwt.encode(
+        claims,
+        settings.jwt_private_key,
+        algorithm="RS256",
+        headers={"kid": settings.jwt_key_id},
     )
 
 
@@ -66,18 +65,19 @@ def decode_token(token: str, expected_type: TokenType) -> dict[str, Any]:
         header = jwt.get_unverified_header(token)
         if header.get("kid") != settings.jwt_key_id:
             raise TokenValidationError("Unknown signing key")
+        options: Options = {"require": ["exp", "sub", "iat"]}
         claims = jwt.decode(
             token,
             settings.jwt_public_key,
             algorithms=["RS256"],
             issuer=settings.jwt_issuer,
-            options={"require_exp": True, "require_sub": True, "require_iat": True},
+            options=options,
         )
-    except JWTError as exc:
+    except PyJWTError as exc:
         raise TokenValidationError("Token is invalid or expired") from exc
     if claims.get("type") != expected_type.value:
         raise TokenValidationError("Token has the wrong purpose")
-    return cast(dict[str, Any], claims)
+    return claims
 
 
 def create_access_token(user_id: uuid.UUID, session_id: uuid.UUID) -> str:

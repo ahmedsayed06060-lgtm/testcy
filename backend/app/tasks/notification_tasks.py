@@ -1,5 +1,6 @@
 import asyncio
 from email.message import EmailMessage
+from email.utils import formataddr
 
 import aiosmtplib
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -15,9 +16,9 @@ templates = Environment(
 )
 
 
-async def _deliver(recipient: str, subject: str, html: str) -> None:
+async def _deliver(recipient: str, subject: str, html: str, sender: str | None = None) -> None:
     message = EmailMessage()
-    message["From"] = settings.smtp_from
+    message["From"] = sender or settings.smtp_from
     message["To"] = recipient
     message["Subject"] = subject
     message.set_content("This notification requires an HTML-capable email client.")
@@ -53,6 +54,21 @@ def send_password_reset_email(email: str, token: str) -> None:
     reset_url = f"{settings.frontend_url}/en/reset-password?token={token}"
     html = templates.get_template("password_reset.html").render(reset_url=reset_url)
     asyncio.run(_deliver(email, "Reset your CyberOps Hub password", html))
+
+
+@celery_app.task(autoretry_for=(ConnectionError,), retry_backoff=True, max_retries=2)
+def send_phishing_email(
+    recipient: str,
+    subject: str,
+    body: str,
+    sender_name: str,
+    sender_email: str,
+) -> None:
+    """Deliver pre-authorized, sanitized awareness content without credentials."""
+    safe_name = sender_name.replace("\r", " ").replace("\n", " ")[:255]
+    sender = formataddr((safe_name, sender_email))
+    html = templates.get_template("phishing_simulation.html").render(body=body)
+    asyncio.run(_deliver(recipient, subject, html, sender))
 
 
 @celery_app.task(autoretry_for=(ConnectionError,), retry_backoff=True, max_retries=2)

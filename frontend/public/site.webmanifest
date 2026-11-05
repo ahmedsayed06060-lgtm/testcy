@@ -1,0 +1,12 @@
+{
+  "name": "CyberOps Hub",
+  "short_name": "CyberOps",
+  "description": "Authorization-first security operations management",
+  "start_url": "/en/dashboard",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f766e",
+  "icons": [
+    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

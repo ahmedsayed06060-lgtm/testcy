@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     api_prefix: str = "/api/v1"
     frontend_url: str = "http://localhost:3000"
+    public_api_url: str = "http://localhost:8000/api/v1"
     backend_cors_origins: str = "http://localhost:3000"
     database_url: str = "postgresql+asyncpg://cyberops:change-me@localhost:5432/cyberops"
     redis_url: str = "redis://localhost:6379/0"
@@ -52,6 +53,10 @@ class Settings(BaseSettings):
     default_job_timeout_minutes: int = Field(default=30, ge=1, le=240)
     max_job_timeout_minutes: int = Field(default=240, ge=30, le=240)
     max_concurrent_sessions: int = Field(default=5, ge=1, le=20)
+    phishing_campaign_days: int = Field(default=7, ge=1, le=30)
+    tool_output_volume: str = "cyberops-hub_scan-output"
+    tool_output_dir: str = "/output"
+    tool_docker_network: str = "cyberops-egress"
 
     @property
     def cors_origins(self) -> list[str]:

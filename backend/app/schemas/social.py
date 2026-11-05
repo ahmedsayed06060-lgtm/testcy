@@ -33,11 +33,16 @@ class SocialAssessmentResponse(ResponseSchema):
     updated_at: datetime
 
 
+class PhishingTarget(InputSchema):
+    email: EmailStr
+    department: str = Field(min_length=1, max_length=100)
+
+
 class PhishingCampaignCreate(InputSchema):
     engagement_id: uuid.UUID
     name: str = Field(min_length=3, max_length=255)
     approval_doc_id: uuid.UUID
-    targets: list[dict[str, Any]] = Field(min_length=1, max_length=10000)
+    targets: list[PhishingTarget] = Field(min_length=1, max_length=10000)
     template_html: str
     subject_line: str = Field(min_length=1, max_length=255)
     sender_name: str = Field(min_length=1, max_length=255)

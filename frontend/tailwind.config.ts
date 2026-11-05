@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import rtl from 'tailwindcss-rtl';
 
 const config: Config = {
   darkMode: ['class'],
@@ -32,6 +33,6 @@ const config: Config = {
       animation: { 'fade-up': 'fade-up .35s ease-out both', 'pulse-soft': 'pulse-soft 2s ease-in-out infinite' },
     },
   },
-  plugins: [require('tailwindcss-rtl')],
+  plugins: [rtl],
 };
 export default config;

@@ -30,7 +30,7 @@ services:
   backend:
     build: { context: ./backend, dockerfile: Dockerfile }
     env_file: .env
-    environment: { DATABASE_URL: ${DATABASE_URL}, REDIS_URL: ${REDIS_URL}, CELERY_BROKER_URL: ${CELERY_BROKER_URL}, CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}, CLAMAV_HOST: clamav }
+    environment: { DATABASE_URL: ${DATABASE_URL}, REDIS_URL: ${REDIS_URL}, CELERY_BROKER_URL: ${CELERY_BROKER_URL}, CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}, CLAMAV_HOST: clamav, PUBLIC_API_URL: http://localhost:8000/api/v1 }
     volumes: ["./backend/keys:/srv/keys:ro"]
     depends_on: { postgres: { condition: service_healthy }, redis: { condition: service_healthy }, minio: { condition: service_healthy }, clamav: { condition: service_healthy } }
     healthcheck: { test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"], interval: 15s, timeout: 5s, retries: 5 }
@@ -38,6 +38,7 @@ services:
   celery-worker:
     build: { context: ./backend, dockerfile: Dockerfile.worker }
     env_file: .env
+    environment: { TOOL_OUTPUT_VOLUME: cyberops-hub_scan-output, TOOL_DOCKER_NETWORK: cyberops-hub_cyberops-egress }
     volumes: ["/var/run/docker.sock:/var/run/docker.sock", "./backend/keys:/srv/keys:ro", "scan-output:/output"]
     depends_on: { postgres: { condition: service_healthy }, redis: { condition: service_healthy }, minio: { condition: service_healthy } }
     networks: [private, cyberops-egress]
