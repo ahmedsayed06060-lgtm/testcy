@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { mockApi } from './helpers';
+import { mockApi, openPage } from './helpers';
 
 test.beforeEach(async ({ page }) => { await mockApi(page); });
 
 test('password and mandatory MFA flow reaches the API-backed dashboard', async ({ page }) => {
-  await page.goto('/en/login');
+  await openPage(page, '/en/login');
   await page.getByLabel(/work email/i).fill('tester@example.com');
   await page.getByLabel(/^password/i).fill('E2e!TestingPassword123');
   await page.getByRole('button', { name: /sign in securely/i }).click();
@@ -15,14 +15,14 @@ test('password and mandatory MFA flow reaches the API-backed dashboard', async (
 });
 
 test('locale switch applies document RTL and Arabic content', async ({ page }) => {
-  await page.goto('/ar/dashboard');
+  await openPage(page, '/ar/dashboard');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.getByRole('heading', { name: 'مرحباً، فريق الأمن' })).toBeVisible();
 });
 
 test('dark mode toggle updates the document theme', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('theme', 'light'));
-  await page.goto('/en/dashboard');
+  await openPage(page, '/en/dashboard');
   await expect(page.locator('html')).not.toHaveClass(/dark/);
   await page.getByRole('button', { name: /toggle color theme/i }).click();
   await expect(page.locator('html')).toHaveClass(/dark/);

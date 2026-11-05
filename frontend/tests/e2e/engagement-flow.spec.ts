@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { mockApi } from './helpers';
+import { mockApi, openPage } from './helpers';
 
 test('create a draft engagement through the real form contract', async ({ page }) => {
   await mockApi(page);
-  await page.goto('/en/engagements');
+  await openPage(page, '/en/engagements');
   await page.getByRole('button', { name: /new engagement/i }).click();
   await page.getByLabel(/engagement name/i).fill('Authorized E2E Draft');
   await page.getByLabel(/client organization id/i).fill('22222222-2222-4222-8222-222222222222');

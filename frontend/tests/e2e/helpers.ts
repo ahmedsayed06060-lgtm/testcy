@@ -27,6 +27,13 @@ const report = {
   file_path: 'reports/e2e/report.pdf', file_size: 2048, generated_by: userId, created_at: now,
 };
 
+export async function openPage(page: Page, path: string) {
+  await page.goto(path);
+  // Next.js development pages can render before their client bundles hydrate.
+  // Wait for those bundles and the mocked queries before interacting with controls.
+  await page.waitForLoadState('networkidle');
+}
+
 export async function mockApi(page: Page) {
   const engagements = [engagement()];
   const reports: Array<Record<string, unknown>> = [report];
