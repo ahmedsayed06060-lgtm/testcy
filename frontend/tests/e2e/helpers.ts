@@ -35,6 +35,20 @@ export async function openPage(page: Page, path: string) {
 }
 
 export async function mockApi(page: Page) {
+  page.on('pageerror', (error) => console.log(`[browser:pageerror] ${error.stack ?? error.message}`));
+  page.on('console', (message) => {
+    if (message.type() === 'error' || message.type() === 'warning') {
+      console.log(`[browser:${message.type()}] ${message.text()}`);
+    }
+  });
+  page.on('requestfailed', (request) => {
+    console.log(`[browser:requestfailed] ${request.method()} ${request.url()} ${request.failure()?.errorText ?? ''}`);
+  });
+  page.on('response', (response) => {
+    if (response.url().includes('/api/v1/')) {
+      console.log(`[api] ${response.status()} ${response.request().method()} ${response.url()}`);
+    }
+  });
   const engagements = [engagement()];
   const reports: Array<Record<string, unknown>> = [report];
   await page.route('**/api/v1/**', async (route) => {
