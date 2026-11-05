@@ -13,10 +13,12 @@ class FindingBase(InputSchema):
     engagement_id: uuid.UUID
     title: str = Field(min_length=3, max_length=500)
     description: str = Field(min_length=3)
+    business_impact: str | None = None
     affected_asset: str = Field(min_length=1, max_length=500)
     severity: Severity
     cvss_vector: str | None = Field(default=None, max_length=200)
-    cvss_score: Decimal | None = Field(default=None, ge=0, le=10)
+    # JSON numbers are valid CVSS input; all other fields retain strict model validation.
+    cvss_score: Decimal | None = Field(default=None, ge=0, le=10, strict=False)
     cwe_id: str | None = Field(default=None, max_length=20)
     owasp_category: str | None = Field(default=None, max_length=100)
     evidence: str | None = None
@@ -38,6 +40,7 @@ class FindingResponse(ResponseSchema):
     job_id: uuid.UUID | None
     title: str
     description: str
+    business_impact: str | None
     affected_asset: str
     severity: Severity
     cvss_vector: str | None

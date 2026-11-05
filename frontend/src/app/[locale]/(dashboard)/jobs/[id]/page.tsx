@@ -1,2 +1,2 @@
 import { JobDetail } from '@/components/jobs/job-detail';
-export default function Page({ params }: { params: { id: string } }) { return <JobDetail id={params.id} />; }
+export default async function Page({ params }: { params: Promise<{ id: string }> }) { const { id } = await params; return <JobDetail id={id} />; }

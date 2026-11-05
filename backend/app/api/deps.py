@@ -2,6 +2,7 @@
 
 import uuid
 from collections.abc import Callable, Coroutine
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import Depends, HTTPException, status
@@ -29,6 +30,11 @@ async def get_current_user(
     session = await db.get(UserSession, session_id)
     if session is None or session.revoked or session.user_id != user_id:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Session has been revoked")
+    expires_at = session.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at <= datetime.now(timezone.utc):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Session has expired")
     user = await db.get(User, user_id)
     if user is None or not user.is_active or user.deleted_at is not None or not user.mfa_enabled:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User is not active")

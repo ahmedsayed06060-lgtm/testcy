@@ -81,7 +81,13 @@ def _target_type(target: str) -> AssetType:
         if len(value) < 5:
             raise ValueError("Empty application identifier")
         return AssetType.APP_ID
-    if value.startswith(("social:", "email:")):
+    if value.startswith("email:"):
+        address = value.split(":", 1)[1].casefold()
+        if address.count("@") != 1 or not address.split("@", 1)[0]:
+            raise ValueError("Malformed employee email")
+        normalize_domain(address.rsplit("@", 1)[1])
+        return AssetType.SOCIAL_ACCOUNT
+    if value.startswith("social:"):
         if len(value.split(":", 1)[1]) < 2:
             raise ValueError("Empty account identifier")
         return AssetType.SOCIAL_ACCOUNT
@@ -118,6 +124,9 @@ def scope_contains_target(scope: ScopeItem, target: str) -> bool:
     target_kind = _target_type(target)
     scope_value = scope.value.strip()
     try:
+        if target.startswith("email:") and scope.asset_type == AssetType.DOMAIN:
+            email_domain = target.rsplit("@", 1)[1]
+            return is_subdomain_of(email_domain, scope_value)
         if target_kind in {AssetType.APP_ID, AssetType.SOCIAL_ACCOUNT}:
             return (
                 scope.asset_type == target_kind
@@ -306,7 +315,7 @@ async def validate_job_authorization(
                 code="TARGET_NOT_IN_SCOPE",
                 message=f"Target is not in scope: {target}",
             )
-        network_asset = target_kind in {
+        network_asset = target.startswith("email:") or target_kind in {
             AssetType.IP,
             AssetType.CIDR,
             AssetType.DOMAIN,

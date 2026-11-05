@@ -19,9 +19,9 @@
 - **Analyst:** read-only assigned engagements, findings, and reports.
 - **Client:** own engagement summaries and reports only; raw tool output and internal comments are excluded.
 
-## Local demonstration
+## Local development and seed data
 
-With no `NEXT_PUBLIC_API_URL`, the web interface uses local demonstration data. Login credentials are pre-filled and the demonstration MFA code is `123456`. No real scans are launched. Setting the API URL switches login and token handling to FastAPI.
+The operational UI always calls FastAPI; set `NEXT_PUBLIC_API_URL` to its `/api/v1` URL and authenticate with a real account and its MFA code. `make seed` optionally inserts clearly labelled synthetic development records, but it does not start jobs. Never seed production, and never interpret seeded findings as real test results.
 
 ## Accessibility and localization
 

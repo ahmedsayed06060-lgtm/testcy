@@ -42,6 +42,10 @@ celery_app.conf.update(
         "daily-data-retention": {
             "task": "app.tasks.retention_tasks.enforce_retention",
             "schedule": crontab(hour=2, minute=0),
-        }
+        },
+        "hourly-campaign-completion": {
+            "task": "app.tasks.social_tasks.complete_expired_campaigns",
+            "schedule": crontab(minute=10),
+        },
     },
 )

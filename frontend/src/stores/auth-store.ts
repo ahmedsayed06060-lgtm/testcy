@@ -1,17 +1,23 @@
 import { create } from 'zustand';
+import type { ApiUser } from '@/types/api';
 
-interface AuthUser { id: string; email: string; full_name: string; role: string }
 interface AuthState {
-  user: AuthUser | null;
+  user: ApiUser | null;
   accessToken: string | null;
   refreshToken: string | null;
-  setCredentials: (user: AuthUser | null, accessToken: string, refreshToken: string) => void;
+  tempToken: string | null;
+  pendingEmail: string | null;
+  setCredentials: (user: ApiUser | null, accessToken: string, refreshToken: string) => void;
+  setChallenge: (tempToken: string, email: string) => void;
+  clearChallenge: () => void;
   clear: () => void;
 }
 
 // Tokens intentionally remain in memory and are never written to localStorage.
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null, accessToken: null, refreshToken: null,
+  user: null, accessToken: null, refreshToken: null, tempToken: null, pendingEmail: null,
   setCredentials: (user, accessToken, refreshToken) => set({ user, accessToken, refreshToken }),
-  clear: () => set({ user: null, accessToken: null, refreshToken: null }),
+  setChallenge: (tempToken, pendingEmail) => set({ tempToken, pendingEmail }),
+  clearChallenge: () => set({ tempToken: null, pendingEmail: null }),
+  clear: () => set({ user: null, accessToken: null, refreshToken: null, tempToken: null, pendingEmail: null }),
 }));

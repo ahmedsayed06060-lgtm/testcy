@@ -18,4 +18,10 @@ export function downloadText(filename: string, content: string, type = 'text/pla
   URL.revokeObjectURL(url);
 }
 
+export function formatDate(value: string | null | undefined) {
+  if (!value) return 'Not set';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
+}
+
 export const severityOrder = ['critical', 'high', 'medium', 'low', 'informational'] as const;

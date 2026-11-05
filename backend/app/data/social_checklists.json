@@ -1,0 +1,20 @@
+{
+  "common":[
+    {"id":"mfa","check":"Multi-factor authentication is enabled for every administrator."},
+    {"id":"admin_review","check":"Named administrators and active sessions are reviewed quarterly."},
+    {"id":"recovery","check":"Recovery email, phone, and codes are controlled by the organization."},
+    {"id":"privacy","check":"Public profile, tagging, location, and contact visibility are intentionally configured."},
+    {"id":"impersonation","check":"Official handles are documented and impersonation reporting contacts are monitored."},
+    {"id":"publishing","check":"Publishing approvals and third-party application access are reviewed."}
+  ],
+  "platforms":{
+    "facebook":[{"id":"facebook_business","check":"Business Manager ownership and two-person admin recovery are configured."}],
+    "instagram":[{"id":"instagram_business","check":"Business account is linked only to approved organization assets."}],
+    "x":[{"id":"x_delegate","check":"Delegated posting access is used instead of shared passwords."}],
+    "linkedin":[{"id":"linkedin_verified","check":"Organization page and employee domain verification are current."}],
+    "tiktok":[{"id":"tiktok_business","check":"Business Center roles and connected applications are approved."}],
+    "youtube":[{"id":"youtube_brand","check":"Brand Account permissions avoid shared primary-account credentials."}],
+    "whatsapp_business":[{"id":"whatsapp_display","check":"Verified display name and official business contact details are current."}],
+    "telegram":[{"id":"telegram_admin","check":"Channel admin rights are minimal and anonymous forwarding is reviewed."}]
+  }
+}

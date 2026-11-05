@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,14 +13,36 @@ from app.database import get_db
 from app.models.authorization_doc import AuthorizationDoc, AuthorizationDocType
 from app.models.phishing_campaign import CampaignStatus, PhishingCampaign
 from app.models.social_assessment import SocialAssessment
-from app.models.user import User
+from app.models.user import Role, User
 from app.schemas.common import success
 from app.schemas.social import ChecklistUpdate, PhishingCampaignCreate, SocialAssessmentCreate
 from app.security.authorization_gate import validate_job_authorization
 from app.services.engagement_service import engagement_access
+from app.services.phishing_service import (
+    CampaignPolicyError,
+    campaign_expired,
+    campaign_metrics,
+    ensure_verified_employee_targets,
+)
 from app.utils.sanitize import sanitize_html
 
 router = APIRouter(tags=["social assessments"])
+
+
+def _campaign_output(campaign: PhishingCampaign, user: User) -> Any:
+    if user.role in {Role.ADMIN, Role.ENGAGEMENT_MANAGER}:
+        return campaign
+    data = jsonable_encoder(campaign)
+    for field in (
+        "targets",
+        "template_html",
+        "landing_page_html",
+        "training_page_html",
+        "sender_email",
+        "opt_out_list",
+    ):
+        data.pop(field, None)
+    return data
 
 
 @router.get("/social-assessments")
@@ -102,7 +125,7 @@ async def list_campaigns(
             select(PhishingCampaign).where(PhishingCampaign.engagement_id == engagement_id)
         )
     ).all()
-    return success(list(records))
+    return success([_campaign_output(record, user) for record in records])
 
 
 @router.post("/phishing-campaigns", status_code=201)
@@ -118,13 +141,16 @@ async def create_campaign(
         or doc.approved is not True
     ):
         raise HTTPException(403, "A verified phishing-specific authorization document is required")
-    for target in payload.targets:
-        email = str(target.get("email", ""))
-        if "@" not in email or not target.get("department"):
-            raise HTTPException(422, "Every target requires an email and department")
     values = payload.model_dump()
+    try:
+        await ensure_verified_employee_targets(db, payload.engagement_id, values["targets"])
+    except CampaignPolicyError as exc:
+        raise HTTPException(403, str(exc)) from exc
     for field in ("template_html", "landing_page_html", "training_page_html"):
-        if "password" in values[field].casefold() or "<form" in values[field].casefold():
+        normalized = values[field].casefold().replace(" ", "")
+        if any(
+            marker in normalized for marker in ("<form", "<input", "type=password", "name=password")
+        ):
             raise HTTPException(422, "Credential collection and form submission are prohibited")
         values[field] = sanitize_html(values[field])
     record = PhishingCampaign(**values, created_by=user.id)
@@ -145,7 +171,7 @@ async def _campaign(db: AsyncSession, campaign_id: uuid.UUID, user: User) -> Phi
 async def get_campaign(
     campaign_id: uuid.UUID, user: User = CurrentUser, db: AsyncSession = Depends(get_db)
 ) -> dict[str, Any]:
-    return success(await _campaign(db, campaign_id, user))
+    return success(_campaign_output(await _campaign(db, campaign_id, user), user))
 
 
 @router.post("/phishing-campaigns/{campaign_id}/send", status_code=202)
@@ -153,8 +179,15 @@ async def send_campaign(
     campaign_id: uuid.UUID, user: User = ManagerUser, db: AsyncSession = Depends(get_db)
 ) -> dict[str, Any]:
     campaign = await _campaign(db, campaign_id, user)
+    if campaign.status != CampaignStatus.DRAFT:
+        raise HTTPException(409, "Only a draft campaign can be sent")
     doc = await db.get(AuthorizationDoc, campaign.approval_doc_id)
-    if not doc or doc.approved is not True or doc.doc_type != AuthorizationDocType.PHISHING:
+    if (
+        not doc
+        or doc.engagement_id != campaign.engagement_id
+        or doc.approved is not True
+        or doc.doc_type != AuthorizationDocType.PHISHING
+    ):
         raise HTTPException(403, "Phishing-specific authorization is no longer valid")
     targets = [
         f"email:{item['email']}"
@@ -177,20 +210,11 @@ async def campaign_results(
     campaign_id: uuid.UUID, user: User = CurrentUser, db: AsyncSession = Depends(get_db)
 ) -> dict[str, Any]:
     campaign = await _campaign(db, campaign_id, user)
-    departments = sorted({str(item.get("department", "Unassigned")) for item in campaign.targets})
-    return success(
-        {
-            "sent": campaign.sent_count,
-            "opened": campaign.opened_count,
-            "clicked": campaign.clicked_count,
-            "reported": campaign.reported_count,
-            "departments": [
-                {"name": name, "sent": 0, "opened": 0, "clicked": 0, "reported": 0}
-                for name in departments
-            ],
-            "individual_tracking": False,
-        }
-    )
+    if campaign.status == CampaignStatus.ACTIVE and campaign_expired(campaign):
+        campaign.status = CampaignStatus.COMPLETED
+        campaign.completed_at = datetime.now(timezone.utc)
+        await db.commit()
+    return success(await campaign_metrics(db, campaign))
 
 
 @router.post("/phishing-campaigns/{campaign_id}/cancel")

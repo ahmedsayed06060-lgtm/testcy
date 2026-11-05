@@ -7,7 +7,7 @@ from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPrimaryKey, enum_type
+from app.models.base import Base, TimestampMixin, UUIDPrimaryKey, enum_type, utcnow
 
 
 class CampaignStatus(str, enum.Enum):
@@ -52,4 +52,30 @@ class PhishingCampaign(UUIDPrimaryKey, TimestampMixin, Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+
+
+class CampaignEventType(str, enum.Enum):
+    OPENED = "opened"
+    CLICKED = "clicked"
+    REPORTED = "reported"
+
+
+class PhishingEvent(UUIDPrimaryKey, Base):
+    """Privacy-preserving campaign events; deliberately no recipient identity."""
+
+    __tablename__ = "phishing_events"
+
+    campaign_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("phishing_campaigns.id", ondelete="CASCADE"), index=True
+    )
+    engagement_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("engagements.id", ondelete="CASCADE"), index=True
+    )
+    department: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    event_type: Mapped[CampaignEventType] = mapped_column(
+        enum_type(CampaignEventType, "campaign_event_type"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False, index=True
     )

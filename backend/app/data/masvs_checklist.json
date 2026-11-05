@@ -1,0 +1,42 @@
+{
+  "standard":"OWASP MASVS",
+  "groups":[
+    {"id":"MASVS-STORAGE","name":"Secure local storage","controls":[
+      {"id":"MASVS-STORAGE-1","check":"Sensitive data is not stored in plaintext application storage."},
+      {"id":"MASVS-STORAGE-2","check":"Sensitive data is excluded from logs, screenshots, backups, and IPC."},
+      {"id":"MASVS-STORAGE-3","check":"Keystore-backed keys and appropriate accessibility flags protect local secrets."}
+    ]},
+    {"id":"MASVS-CRYPTO","name":"Cryptography","controls":[
+      {"id":"MASVS-CRYPTO-1","check":"Maintained platform cryptographic APIs are used correctly."},
+      {"id":"MASVS-CRYPTO-2","check":"Keys have appropriate origin, purpose, rotation, and invalidation."}
+    ]},
+    {"id":"MASVS-AUTH","name":"Authentication and authorization","controls":[
+      {"id":"MASVS-AUTH-1","check":"Sensitive operations require fresh server-verified authentication."},
+      {"id":"MASVS-AUTH-2","check":"Sessions expire, revoke remotely, and are not persisted insecurely."},
+      {"id":"MASVS-AUTH-3","check":"Authorization is enforced by the backend for every object and action."}
+    ]},
+    {"id":"MASVS-NETWORK","name":"Network communication","controls":[
+      {"id":"MASVS-NETWORK-1","check":"All sensitive traffic uses modern TLS with hostname validation."},
+      {"id":"MASVS-NETWORK-2","check":"Cleartext traffic and user-added CAs are disabled for production."},
+      {"id":"MASVS-NETWORK-3","check":"Certificate pinning failures fail closed where pinning is required."}
+    ]},
+    {"id":"MASVS-PLATFORM","name":"Platform interaction","controls":[
+      {"id":"MASVS-PLATFORM-1","check":"Exported components, deep links, and IPC enforce caller authorization."},
+      {"id":"MASVS-PLATFORM-2","check":"WebViews disable unnecessary JavaScript, file access, and mixed content."},
+      {"id":"MASVS-PLATFORM-3","check":"Third-party keyboards, clipboard, and overlays do not expose secrets."}
+    ]},
+    {"id":"MASVS-CODE","name":"Code quality","controls":[
+      {"id":"MASVS-CODE-1","check":"Release builds remove debug endpoints, test credentials, and verbose logs."},
+      {"id":"MASVS-CODE-2","check":"Dependencies are supported, scanned, and free of known critical vulnerabilities."},
+      {"id":"MASVS-CODE-3","check":"Untrusted input is validated before native, SQL, WebView, or IPC use."}
+    ]},
+    {"id":"MASVS-RESILIENCE","name":"Defense in depth","controls":[
+      {"id":"MASVS-RESILIENCE-1","check":"Tamper detection signals are verified server-side and never trusted alone."},
+      {"id":"MASVS-RESILIENCE-2","check":"High-risk workflows retain server authorization on rooted or instrumented devices."}
+    ]},
+    {"id":"MASVS-PRIVACY","name":"Privacy","controls":[
+      {"id":"MASVS-PRIVACY-1","check":"Data collection is minimized, disclosed, and covered by retention controls."},
+      {"id":"MASVS-PRIVACY-2","check":"Permissions are justified, runtime-scoped, and denied gracefully."}
+    ]}
+  ]
+}

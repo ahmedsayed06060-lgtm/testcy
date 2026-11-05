@@ -20,6 +20,7 @@ def upgrade() -> None:
     op.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
     Base.metadata.create_all(bind=op.get_bind(), checkfirst=True)
     op.execute("CREATE INDEX ix_findings_search_vector ON findings USING gin(search_vector)")
+    # asyncpg prepares each exec_driver_sql call; keep one DDL statement per call.
     op.execute(
         """
         CREATE OR REPLACE FUNCTION findings_search_vector_update() RETURNS trigger AS $$
@@ -29,30 +30,34 @@ def upgrade() -> None:
             coalesce(NEW.affected_asset, '') || ' ' || coalesce(NEW.cwe_id, ''));
           RETURN NEW;
         END
-        $$ LANGUAGE plpgsql;
-        CREATE TRIGGER findings_search_vector_refresh
-        BEFORE INSERT OR UPDATE OF title, description, affected_asset, cwe_id ON findings
-        FOR EACH ROW EXECUTE FUNCTION findings_search_vector_update();
-        CREATE RULE no_update AS ON UPDATE TO audit_logs DO INSTEAD NOTHING;
-        CREATE RULE no_delete AS ON DELETE TO audit_logs DO INSTEAD NOTHING;
+        $$ LANGUAGE plpgsql
         """
     )
-    # RLS complements, rather than replaces, authorization checks in services.
     op.execute(
         """
-        ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
-        ALTER TABLE clients FORCE ROW LEVEL SECURITY;
-        CREATE POLICY tenant_clients ON clients USING (
+        CREATE TRIGGER findings_search_vector_refresh
+        BEFORE INSERT OR UPDATE OF title, description, affected_asset, cwe_id ON findings
+        FOR EACH ROW EXECUTE FUNCTION findings_search_vector_update()
+        """
+    )
+    op.execute("CREATE RULE no_update AS ON UPDATE TO audit_logs DO INSTEAD NOTHING")
+    op.execute("CREATE RULE no_delete AS ON DELETE TO audit_logs DO INSTEAD NOTHING")
+    # RLS complements, rather than replaces, authorization checks in services.
+    op.execute("ALTER TABLE clients ENABLE ROW LEVEL SECURITY")
+    op.execute("ALTER TABLE clients FORCE ROW LEVEL SECURITY")
+    op.execute(
+        """CREATE POLICY tenant_clients ON clients USING (
           current_setting('app.is_admin', true) = 'on' OR
           id::text = current_setting('app.client_id', true)
-        );
-        ALTER TABLE engagements ENABLE ROW LEVEL SECURITY;
-        ALTER TABLE engagements FORCE ROW LEVEL SECURITY;
-        CREATE POLICY tenant_engagements ON engagements USING (
+        )"""
+    )
+    op.execute("ALTER TABLE engagements ENABLE ROW LEVEL SECURITY")
+    op.execute("ALTER TABLE engagements FORCE ROW LEVEL SECURITY")
+    op.execute(
+        """CREATE POLICY tenant_engagements ON engagements USING (
           current_setting('app.is_admin', true) = 'on' OR
           client_id::text = current_setting('app.client_id', true)
-        );
-        """
+        )"""
     )
     for table in (
         "jobs",
@@ -62,6 +67,7 @@ def upgrade() -> None:
         "authorization_docs",
         "social_assessments",
         "phishing_campaigns",
+        "phishing_events",
         "mobile_analyses",
     ):
         op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")

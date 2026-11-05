@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { BriefcaseBusiness, Bug, FileBarChart, LayoutDashboard, Search, ScanSearch, X } from 'lucide-react';
 import { useUIStore } from '@/stores/ui-store';
-import { useOpsStore } from '@/stores/ops-store';
+import { useEngagements } from '@/hooks/use-engagements';
+import { useFindings } from '@/hooks/use-findings';
 
 const pages = [
   { title: 'Security overview', href: '/dashboard', icon: LayoutDashboard, keywords: 'home dashboard stats' },
@@ -18,7 +19,10 @@ const pages = [
 export function CommandPalette() {
   const locale = useLocale();
   const { commandOpen, setCommandOpen } = useUIStore();
-  const { engagements, findings } = useOpsStore();
+  const engagementsQuery = useEngagements({ limit: 100 });
+  const findingsQuery = useFindings({ limit: 100 });
+  const engagements = useMemo(() => engagementsQuery.data?.items ?? [], [engagementsQuery.data]);
+  const findings = useMemo(() => findingsQuery.data?.items ?? [], [findingsQuery.data]);
   const [query, setQuery] = useState('');
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
@@ -28,13 +32,12 @@ export function CommandPalette() {
     window.addEventListener('keydown', listener);
     return () => window.removeEventListener('keydown', listener);
   }, [commandOpen, setCommandOpen]);
-  useEffect(() => { if (!commandOpen) setQuery(''); }, [commandOpen]);
   const results = useMemo(() => {
     const q = query.toLowerCase().trim();
     const pageResults = pages.filter((page) => !q || `${page.title} ${page.keywords}`.toLowerCase().includes(q)).map((page) => ({ ...page, subtitle: 'Page' }));
     if (!q) return pageResults;
-    const engagementResults = engagements.filter((item) => `${item.name} ${item.client}`.toLowerCase().includes(q)).slice(0, 4).map((item) => ({ title: item.name, subtitle: item.client, href: `/engagements/${item.id}`, icon: BriefcaseBusiness }));
-    const findingResults = findings.filter((item) => `${item.id} ${item.title} ${item.asset}`.toLowerCase().includes(q)).slice(0, 4).map((item) => ({ title: item.title, subtitle: `${item.id} · ${item.asset}`, href: `/findings/${item.id}`, icon: Bug }));
+    const engagementResults = engagements.filter((item) => `${item.name} ${item.type}`.toLowerCase().includes(q)).slice(0, 4).map((item) => ({ title: item.name, subtitle: item.type.replaceAll('_', ' '), href: `/engagements/${item.id}`, icon: BriefcaseBusiness }));
+    const findingResults = findings.filter((item) => `${item.id} ${item.title} ${item.affected_asset}`.toLowerCase().includes(q)).slice(0, 4).map((item) => ({ title: item.title, subtitle: `${item.id} · ${item.affected_asset}`, href: `/findings/${item.id}`, icon: Bug }));
     return [...pageResults, ...engagementResults, ...findingResults];
   }, [query, engagements, findings]);
   if (!commandOpen) return null;

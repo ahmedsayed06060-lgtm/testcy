@@ -1,2 +1,2 @@
 import { ReportsView } from '@/components/reports/reports-view';
-export default function GenerateReportPage({ searchParams }: { searchParams: { engagement?: string } }) { return <ReportsView initialEngagement={searchParams.engagement} autoOpen />; }
+export default async function GenerateReportPage({ searchParams }: { searchParams: Promise<{ engagement?: string }> }) { const { engagement } = await searchParams; return <ReportsView initialEngagement={engagement} autoOpen />; }

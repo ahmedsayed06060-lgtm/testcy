@@ -37,7 +37,7 @@ services:
   backend:
     build: { context: ./backend, dockerfile: Dockerfile }
     env_file: .env
-    environment: { ENVIRONMENT: production, DATABASE_URL: ${DATABASE_URL}, REDIS_URL: ${REDIS_URL}, JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private_key, JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public_key, CLAMAV_HOST: clamav }
+    environment: { ENVIRONMENT: production, DATABASE_URL: ${DATABASE_URL}, REDIS_URL: ${REDIS_URL}, JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private_key, JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public_key, CLAMAV_HOST: clamav, PUBLIC_API_URL: https://${DOMAIN}/api/v1 }
     secrets: [jwt_private_key, jwt_public_key]
     depends_on: { postgres: { condition: service_healthy }, redis: { condition: service_healthy }, clamav: { condition: service_healthy } }
     restart: unless-stopped
@@ -46,6 +46,7 @@ services:
   celery-worker:
     build: { context: ./backend, dockerfile: Dockerfile.worker }
     env_file: .env
+    environment: { TOOL_OUTPUT_VOLUME: cyberops-hub-prod_scan-output, TOOL_DOCKER_NETWORK: cyberops-hub-prod_cyberops-egress }
     volumes: ["/var/run/docker.sock:/var/run/docker.sock", "scan-output:/output"]
     depends_on: [postgres, redis, minio]
     restart: unless-stopped

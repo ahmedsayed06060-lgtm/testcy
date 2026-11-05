@@ -39,6 +39,7 @@ class Finding(UUIDPrimaryKey, TimestampMixin, SoftDeleteMixin, Base):
     )
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
+    business_impact: Mapped[str | None] = mapped_column(Text)
     affected_asset: Mapped[str] = mapped_column(String(500), nullable=False, index=True)
     severity: Mapped[Severity] = mapped_column(enum_type(Severity, "severity"), index=True)
     cvss_vector: Mapped[str | None] = mapped_column(String(200))

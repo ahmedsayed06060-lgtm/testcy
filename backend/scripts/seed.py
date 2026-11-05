@@ -9,8 +9,19 @@ from sqlalchemy import select
 from app.database import SessionFactory
 from app.minio_client import upload_bytes
 from app.models import (
-    AuthorizationDoc, AuthorizationDocType, Client, Engagement, EngagementStatus,
-    EngagementType, Finding, FindingStatus, Role, ScopeItem, Severity, SystemSetting, User,
+    AuthorizationDoc,
+    AuthorizationDocType,
+    Client,
+    Engagement,
+    EngagementStatus,
+    EngagementType,
+    Finding,
+    FindingStatus,
+    Role,
+    ScopeItem,
+    Severity,
+    SystemSetting,
+    User,
 )
 from app.models.scope import AssetType, VerificationMethod
 from app.security.encryption import get_field_encryption
@@ -54,7 +65,10 @@ async def seed() -> None:
             client_id=client.id, name="Acme Corp Annual Pentest 2026",
             type=EngagementType.COMPREHENSIVE, status=EngagementStatus.ACTIVE,
             start_date=date.today(), end_date=date.today() + timedelta(days=30),
-            rules_of_engagement="Local demonstration only. Explicit owner approval is still required for every real target.",
+            rules_of_engagement=(
+                "Local demonstration only. Explicit owner approval is still required "
+                "for every real target."
+            ),
             emergency_contact_name="Acme Security", emergency_contact_phone="+123456789",
             created_by=users[Role.ADMIN.value].id,
         )
@@ -69,7 +83,11 @@ async def seed() -> None:
         db.add(ScopeItem(engagement_id=engagement.id, asset_type=AssetType.DOMAIN,
                          value="*.google.com", in_scope=False))
         path = f"authorizations/{engagement.id}/demo.pdf"
-        upload_bytes(path, b"%PDF-1.4\n% Development authorization placeholder\n%%EOF", "application/pdf")
+        upload_bytes(
+            path,
+            b"%PDF-1.4\n% Development authorization placeholder\n%%EOF",
+            "application/pdf",
+        )
         db.add(AuthorizationDoc(
             engagement_id=engagement.id, doc_type=AuthorizationDocType.AUTHORIZATION_LETTER,
             original_filename="development-authorization.pdf", file_path=path, file_size=70,
@@ -84,7 +102,10 @@ async def seed() -> None:
                 affected_asset="localhost", severity=severity,
                 status=FindingStatus.OPEN if index < 4 else FindingStatus.FIXED,
                 found_by=users[Role.PENTESTER.value].id,
-                remediation="Review the demonstration workflow and replace with validated engagement evidence.",
+                remediation=(
+                    "Review the demonstration workflow and replace with validated "
+                    "engagement evidence."
+                ),
             ))
         db.add_all([SystemSetting(key="data_retention_days", value=365),
                     SystemSetting(key="max_concurrent_jobs", value=5)])

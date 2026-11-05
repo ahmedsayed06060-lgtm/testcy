@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 
@@ -42,8 +42,17 @@ async def change_password(
     validate_password(payload.new_password, user.email)
     user.password_hash = hash_password(payload.new_password)
     user.password_changed_at = datetime.now(timezone.utc)
+    await db.execute(update(UserSession).where(UserSession.user_id == user.id).values(revoked=True))
+    await record_audit(
+        db,
+        action="auth.password_changed",
+        resource_type="user",
+        resource_id=user.id,
+        user_id=user.id,
+        details={"sessions_revoked": True},
+    )
     await db.commit()
-    return success({"password_changed": True})
+    return success({"password_changed": True, "sessions_revoked": True})
 
 
 @router.get("/me/sessions")
@@ -56,6 +65,22 @@ async def sessions(user: User = CurrentUser, db: AsyncSession = Depends(get_db))
         )
     ).all()
     return success(list(records))
+
+
+@router.delete("/me/sessions")
+async def revoke_all_sessions(
+    user: User = CurrentUser, db: AsyncSession = Depends(get_db)
+) -> dict[str, Any]:
+    await db.execute(update(UserSession).where(UserSession.user_id == user.id).values(revoked=True))
+    await record_audit(
+        db,
+        action="auth.all_sessions_revoked",
+        resource_type="user",
+        resource_id=user.id,
+        user_id=user.id,
+    )
+    await db.commit()
+    return success({"revoked": True})
 
 
 @router.delete("/me/sessions/{session_id}")

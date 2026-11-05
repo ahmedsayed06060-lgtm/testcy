@@ -4,8 +4,8 @@ A bilingual security operations platform for managing explicitly authorized enga
 
 ## Stack
 
-- Next.js 14, strict TypeScript, Tailwind CSS, TanStack Query, Zustand, next-intl
-- FastAPI, SQLAlchemy 2 async, PostgreSQL 16, Alembic, Celery, Redis, MinIO
+- Next.js 16 / React 19, strict TypeScript, Tailwind CSS 4, TanStack Query, Zustand, next-intl
+- FastAPI, PyJWT RS256 authentication, SQLAlchemy 2 async, PostgreSQL 16, Alembic, Celery, Redis, MinIO
 - Sandboxed Nmap, testssl.sh, Nuclei, ZAP, MobSF, and public-data OSINT workers
 
 ## Quick start
@@ -24,11 +24,11 @@ Open `http://localhost:3000`. API documentation is at `http://localhost:8000/api
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-The web application includes a clearly labelled local demonstration dataset so its interface can be reviewed without infrastructure. Set `NEXT_PUBLIC_API_URL` to connect it to a running API.
+Set `NEXT_PUBLIC_API_URL` to the running API's `/api/v1` URL. Operational screens use live tenant-scoped API responses; there is no demonstration-data fallback. Protected report and evidence downloads retrieve authenticated, short-lived signed URLs.
 
 ## Verification
 
@@ -38,7 +38,19 @@ make test
 make build
 ```
 
-Backend tests focus on authentication, RBAC, scope matching, time windows, ownership checks, and denial auditing. Frontend tests cover accessible forms, scope validation, CVSS calculation, and data tables.
+The backend suite enforces **85% minimum statement coverage** (approximately **89%** in the verified local run) and covers authentication, tenant/RBAC boundaries, lifecycle operations, scope matching, time windows, ownership checks, sanitization, evidence, reporting, notifications, campaigns, and denial auditing. Frontend unit tests cover accessible forms, scope validation, CVSS calculation, and data tables.
+
+CI also starts PostgreSQL 16, applies Alembic migrations, and runs live cross-tenant RLS and audit-immutability integration tests through a non-superuser role. These tests skip locally unless `POSTGRES_TEST_URL` points to a **disposable migrated database**.
+
+For browser workflow checks:
+
+```bash
+cd frontend
+npx playwright install chromium
+npx playwright test
+```
+
+Playwright uses explicit route-level API contract mocks for login/MFA, RTL, dark mode, engagement creation, authorization rejection, report generation, and signed downloads. It needs no backend credentials, but these mocked checks complement rather than replace a live-stack deployment smoke test.
 
 ## Security boundary
 

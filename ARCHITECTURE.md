@@ -9,10 +9,10 @@ flowchart LR
     U[Consultant / Client] -->|HTTPS, en/ar| T[Traefik TLS]
     T --> F[Next.js web application]
     T --> A[FastAPI REST + WebSocket]
-    F -->|REST / Socket.IO| A
+    F -->|REST / WebSocket| A
     A --> P[(PostgreSQL 16 + RLS)]
     A --> R[(Redis)]
-    A --> M[(MinIO encrypted objects)]
+    A --> M[(MinIO private objects)]
     A --> C[Celery dispatch]
     C --> R
     W[Isolated Celery workers] --> R
@@ -26,7 +26,7 @@ flowchart LR
 
 ## Trust boundaries
 
-1. **Browser boundary:** restrictive CORS, CSP, secure cookies, CSRF tokens, and short-lived RS256 access tokens.
+1. **Browser boundary:** restrictive CORS, CSP, in-memory short-lived RS256 access tokens, and no persistent browser token storage. Production deployments may add cookie-based token storage with SameSite and CSRF controls at the TLS/application boundary.
 2. **Tenant boundary:** every client-owned row carries an engagement/client relationship; PostgreSQL RLS provides defense in depth in addition to API filters.
 3. **Dispatch boundary:** REST handlers and worker entry points both invoke the authorization gate. A queued job cannot run after its approval or testing window expires.
 4. **Execution boundary:** each tool gets a read-only container, dropped capabilities, PID/CPU/memory limits, a dedicated egress-controlled network, and a hard timeout.
@@ -113,8 +113,8 @@ sequenceDiagram
     API->>API: RBAC + tenant access check
     API->>Queue: reports queue
     Queue->>Worker: Render sanitized finding data
-    Worker->>Worker: WeasyPrint PDF or python-docx
-    Worker->>Store: Encrypted artifact
+    Worker->>Worker: Self-contained WeasyPrint PDF or python-docx
+    Worker->>Store: Private access-controlled artifact
     Worker->>API: Report metadata + notification
     Manager->>API: Download report
     API-->>Manager: Short-lived presigned URL
@@ -143,4 +143,5 @@ Development uses Docker Compose; production places all services behind Traefik a
 - Refresh-token reuse revokes the entire token family.
 - A kill switch revokes queued work and stops active containers; workers check cancellation before each execution phase.
 - Tool output is treated as untrusted data and sanitized before display or report rendering.
+- PDF reports disable presentational-hint CSS and reject every local or network resource fetch; templates and inline styles are self-contained.
 - Retention jobs delete object payloads before tombstoning metadata and record every deletion.

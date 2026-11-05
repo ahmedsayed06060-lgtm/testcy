@@ -126,4 +126,24 @@ async def client_stats(
         if ids
         else 0
     )
-    return success({"client_id": client_id, "engagements": count or 0})
+    severity_rows = (
+        (
+            await db.execute(
+                select(Finding.severity, func.count(Finding.id))
+                .join(Engagement, Finding.engagement_id == Engagement.id)
+                .where(
+                    Finding.engagement_id.in_(ids),
+                    Engagement.client_id == client_id,
+                    Finding.deleted_at.is_(None),
+                )
+                .group_by(Finding.severity)
+            )
+        ).all()
+        if ids
+        else []
+    )
+    findings = {item.value: 0 for item in Severity} | {
+        (key.value if isinstance(key, Severity) else str(key)): value
+        for key, value in severity_rows
+    }
+    return success({"client_id": client_id, "engagements": count or 0, "findings": findings})

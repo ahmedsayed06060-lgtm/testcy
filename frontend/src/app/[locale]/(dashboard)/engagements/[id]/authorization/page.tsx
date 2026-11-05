@@ -1,2 +1,2 @@
 import { EngagementDetail } from '@/components/engagements/engagement-detail';
-export default function Page({ params }: { params: { id: string } }) { return <EngagementDetail id={params.id} tab="authorization" />; }
+export default async function Page({ params }: { params: Promise<{ id: string }> }) { const { id } = await params; return <EngagementDetail id={id} tab="authorization" />; }

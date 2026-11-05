@@ -1,3 +1,4 @@
+import jwt
 import pyotp
 import pytest
 from cryptography.hazmat.primitives import serialization
@@ -107,6 +108,26 @@ async def test_access_token_purpose_is_enforced(authorized_context):
     with pytest.raises(TokenValidationError):
         decode_token(token, TokenType.ACCESS)
     assert decode_token(token, TokenType.MFA)["sub"] == str(authorized_context["tester"].id)
+
+
+def test_access_token_rejects_unknown_key_ids_and_non_rs256_algorithms(authorized_context):
+    token = create_token(authorized_context["tester"].id, TokenType.ACCESS)
+    claims = jwt.decode(token, options={"verify_signature": False})
+    unknown_key = jwt.encode(
+        claims,
+        settings.jwt_private_key,
+        algorithm="RS256",
+        headers={"kid": "unknown-test-key"},
+    )
+    hmac_forgery = jwt.encode(
+        claims,
+        "attacker-controlled-test-key-32-bytes",
+        algorithm="HS256",
+        headers={"kid": settings.jwt_key_id},
+    )
+    for invalid in (unknown_key, hmac_forgery):
+        with pytest.raises(TokenValidationError):
+            decode_token(invalid, TokenType.ACCESS)
 
 
 def test_password_policy_rejects_common_and_email_based_passwords():

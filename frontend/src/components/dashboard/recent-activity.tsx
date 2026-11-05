@@ -1,9 +1,10 @@
-import { Bug, FileBarChart, ScanLine, ShieldCheck } from 'lucide-react';
-import { Avatar } from '@/components/ui/avatar';
-import { activities } from '@/lib/demo-data';
+'use client';
 
-const icons = { finding: Bug, job: ScanLine, report: FileBarChart, authorization: ShieldCheck };
+import { ActivityTimeline } from './activity-timeline';
+import { useAuditLog } from '@/hooks/use-audit-log';
 
 export function RecentActivity() {
-  return <div className="divide-y divide-line">{activities.map((activity) => { const Icon = icons[activity.kind]; return <div key={activity.id} className="flex gap-3 px-5 py-4"><div className="relative"><Avatar name={activity.actor} initials={activity.initials} size="sm" className="rounded-full" /><span className="absolute -bottom-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-surface bg-canvas text-brand-600"><Icon className="h-2.5 w-2.5" /></span></div><div className="min-w-0 flex-1"><p className="text-xs leading-5 text-muted"><span className="font-semibold text-ink">{activity.actor}</span> {activity.action} <span className="font-medium text-ink">{activity.subject}</span></p><p className="mt-1 text-[10px] text-muted/70">{activity.time}</p></div></div>; })}</div>;
+  const events = useAuditLog({ limit: 8 });
+  if (events.isLoading) return <p className="p-5 text-xs text-muted">Loading immutable audit activity…</p>;
+  return <div className="p-5"><ActivityTimeline events={events.data?.items ?? []} /></div>;
 }
