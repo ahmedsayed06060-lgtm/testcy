@@ -52,6 +52,27 @@ jobs:
       - run: pytest --cov=app --cov-report=xml --cov-report=term-missing --junitxml=pytest.xml
         env:
           POSTGRES_TEST_URL: postgresql://rls_test:ci-rls-test-only@localhost:5432/cyberops_test
+      - name: Annotate backend test failures
+        if: failure()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          report = Path('pytest.xml')
+          if report.exists():
+              root = ET.parse(report).getroot()
+              for case in root.iter('testcase'):
+                  failures = list(case.findall('failure')) + list(case.findall('error'))
+                  for failure in failures:
+                      def escape(value):
+                          return value.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+                      path = case.get('classname', 'tests').replace('.', '/') + '.py'
+                      title = escape(case.get('name', 'backend test'))
+                      message = escape(failure.get('message', 'Test failed'))
+                      details = escape((failure.text or '')[-12000:])
+                      print(f'::error file={path},title={title}::{message}%0A{details}')
+          PY
       # Reports disable presentational hints and all resource fetching, so
       # PYSEC-2026-3412's <body background> CSS-injection path is unreachable.
       - run: pip-audit --ignore-vuln PYSEC-2026-3412
