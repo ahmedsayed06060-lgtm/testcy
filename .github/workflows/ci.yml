@@ -49,14 +49,20 @@ jobs:
 
           asyncio.run(main())
           PY
-      - run: pytest --cov=app --cov-report=xml --cov-report=term-missing
+      - run: pytest --cov=app --cov-report=xml --cov-report=term-missing --junitxml=pytest.xml
         env:
           POSTGRES_TEST_URL: postgresql://rls_test:ci-rls-test-only@localhost:5432/cyberops_test
       # Reports disable presentational hints and all resource fetching, so
       # PYSEC-2026-3412's <body background> CSS-injection path is unreachable.
       - run: pip-audit --ignore-vuln PYSEC-2026-3412
-      - uses: actions/upload-artifact@v5
-        with: { name: backend-coverage, path: backend/coverage.xml }
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: backend-verification
+          if-no-files-found: warn
+          path: |
+            backend/pytest.xml
+            backend/coverage.xml
   frontend:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: frontend } }
@@ -81,9 +87,14 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: failure()
-        with: { name: playwright-report, path: frontend/playwright-report }
+        with:
+          name: playwright-report
+          if-no-files-found: error
+          path: |
+            frontend/playwright-report
+            frontend/test-results
   security:
     runs-on: ubuntu-latest
     steps:
