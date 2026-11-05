@@ -8,6 +8,8 @@ export default defineConfig({
     command: 'npm run dev -- --port 3000',
     url: 'http://127.0.0.1:3000/en/login',
     reuseExistingServer: !process.env.CI,
+    stdout: 'pipe',
+    stderr: 'pipe',
     env: { NEXT_PUBLIC_API_URL: '/api/v1' },
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

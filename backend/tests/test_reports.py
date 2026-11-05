@@ -129,8 +129,8 @@ def test_pdf_renderer_disables_external_resources_and_presentational_hints(
         def __init__(self, **kwargs):
             self.kwargs = kwargs
 
-        def write_pdf(self):
-            assert self.kwargs["presentational_hints"] is False
+        def write_pdf(self, **options):
+            assert options["presentational_hints"] is False
             assert '<link rel="stylesheet"' not in self.kwargs["string"]
             assert "<style>" in self.kwargs["string"]
             with pytest.raises(ValueError, match="resource loading is disabled"):

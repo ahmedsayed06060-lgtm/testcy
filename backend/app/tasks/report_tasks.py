@@ -151,11 +151,7 @@ def _render_html(
     html = template.render(**context)
     return cast(
         bytes,
-        HTML(
-            string=html,
-            url_fetcher=_deny_report_resource,
-            presentational_hints=False,
-        ).write_pdf(),
+        HTML(string=html, url_fetcher=_deny_report_resource).write_pdf(presentational_hints=False),
     )
 
 
